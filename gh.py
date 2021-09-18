@@ -51,6 +51,3 @@ def get_recs(token):
             })
 
     return recs
-
-if __name__ == "__main__":
-    print(get_recs("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"))

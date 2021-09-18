@@ -8,8 +8,7 @@ app = Flask(__name__)
 def create_task():
     if not request.json or not 'token' in request.json:
         abort(400)
-    token = request.json['token']
-    recs = get_recs(token)
+    recs = get_recs(request.json['token'], request.json['lf'])
     return jsonify(recs), 200
 
 

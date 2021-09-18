@@ -1,6 +1,8 @@
 from github import Github
 import math
 
+from embeddings import getVector, similarity
+
 
 def sigmoid(x):
     return 1 / (1 + math.exp(-x))
@@ -17,7 +19,7 @@ def gen_top(langs, total, scaling = 1):
                 total[lang] = (lines / total_lines) * scaling
 
 
-def get_recs(token):
+def get_recs(token, looking_for=""):
     g = Github(token)
     user = g.get_user()
 
@@ -37,17 +39,25 @@ def get_recs(token):
     # calculate top 4 languages
     top = sorted(weighted_langs.items(), key=lambda item: item[1], reverse=True)[:4]
     recs = []
+
+    lf_vec = getVector(looking_for)
     for (lang, freq) in top:
         # for each language, search for 1-2 projects
         repositories = g.search_repositories(query=f'language:{lang} good-first-issues:>3')
-        bound = math.floor(1 + sigmoid(freq))
+        bound = math.floor(1 + sigmoid(freq) * 1.5)
         for repo in repositories[:bound]:
+            desc_vec = getVector(repo.description + " " + " ".join(repo.get_topics()))
+            mult = similarity(lf_vec, desc_vec)
             recs.append({
                 "name": repo.full_name,
+                "description": repo.description,
                 "topics": repo.get_topics(),
                 "stars": repo.stargazers_count,
                 "forks": repo.forks_count,
-                "relevance": freq
+                "relevance": freq + (mult * 10)
             })
 
-    return recs
+    return sorted(recs, key=lambda item: item["relevance"], reverse=True)
+
+def eco_system(token, repo):
+    g = Github(token)

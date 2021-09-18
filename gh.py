@@ -19,6 +19,16 @@ def gen_top(langs, total, scaling = 1):
                 total[lang] = (lines / total_lines) * scaling
 
 
+def fmt_repo(repo):
+    return {
+        "name": repo.full_name,
+        "description": repo.description,
+        "topics": repo.get_topics(),
+        "stars": repo.stargazers_count,
+        "forks": repo.forks_count,
+    }
+
+
 def get_recs(token, looking_for=""):
     g = Github(token)
     user = g.get_user()
@@ -43,21 +53,27 @@ def get_recs(token, looking_for=""):
     lf_vec = getVector(looking_for)
     for (lang, freq) in top:
         # for each language, search for 1-2 projects
-        repositories = g.search_repositories(query=f'language:{lang} good-first-issues:>3')
+        repositories = g.search_repositories(query=f'language:{lang} good-first-issues:3..50')
         bound = math.floor(1 + sigmoid(freq) * 1.5)
         for repo in repositories[:bound]:
             desc_vec = getVector(repo.description + " " + " ".join(repo.get_topics()))
             mult = similarity(lf_vec, desc_vec)
-            recs.append({
-                "name": repo.full_name,
-                "description": repo.description,
-                "topics": repo.get_topics(),
-                "stars": repo.stargazers_count,
-                "forks": repo.forks_count,
-                "relevance": freq + (mult * 10)
-            })
+            repo = fmt_repo(repo)
+            repo["relevance"] = freq + (mult * 10)
+            recs.append(repo)
 
     return sorted(recs, key=lambda item: item["relevance"], reverse=True)
 
-def eco_system(token, repo):
+
+def similar(token, repo):
     g = Github(token)
+
+    repo = g.get_repo(repo)
+    topics = repo.get_topics()
+    recs = []
+    for topic in topics:
+        repositories = g.search_repositories(query=f'topic:{topic}')
+        for repo in repositories[:2]:
+            repo = fmt_repo(repo)
+            recs.append(repo)
+    return recs

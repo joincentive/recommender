@@ -21,8 +21,7 @@ class User(base):
     __tablename__ = 'users'
 
     email = Column(String, primary_key=True)
-    director = Column(String)
-    year = Column(String)
+    wallet_address = Column(String)
     subscribed = relationship("Repo")
 
 class LabelVector(base):

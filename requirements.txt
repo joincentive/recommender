@@ -2,3 +2,4 @@ flask
 spacy
 scipy
 PyGithub
+flask_cors

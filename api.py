@@ -1,13 +1,16 @@
 from flask import Flask, request, abort, jsonify
+from flask_cors import CORS
 from gh import get_recs, similar
 
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route('/api/recs', methods=['POST'])
 def recs():
     if not request.json or not ('token' in request.json or 'lf' in request.json):
         abort(400)
+    print(request.json['token'], request.json['lf'])
     recs = get_recs(request.json['token'], request.json['lf'])
     return jsonify(recs), 200
 
